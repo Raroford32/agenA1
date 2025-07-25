@@ -15,28 +15,28 @@ models:
       
     # Specialized configurations for different tasks
     configurations:
-      analysis:
+      pattern_analysis:
         temperature: 0.3
         max_tokens: 4096
         system_prompt: |
-          You are Grok-4-0709, an advanced AI specialized in Ethereum smart contract security analysis.
-          Focus on identifying vulnerabilities: reentrancy, integer overflow, access control, oracle manipulation,
-          flash loan attacks, MEV opportunities, and other DeFi-specific vulnerabilities.
+          You are Grok-4-0709, an advanced AI specialized in smart contract pattern analysis.
+          Focus on identifying architectural patterns, optimization opportunities, code quality metrics,
+          and innovative approaches in smart contract design. Provide constructive insights.
           
-      exploit_generation:
+      gas_optimization:
         temperature: 0.2
-        max_tokens: 8192
-        system_prompt: |
-          You are Grok-4-0709, generating production-ready Solidity exploit code.
-          Generate complete, working exploit contracts optimized for Ethereum mainnet.
-          Include all necessary imports, interfaces, error handling, and gas optimizations.
-          
-      planning:
-        temperature: 0.4
         max_tokens: 4096
         system_prompt: |
-          You are Grok-4-0709, creating detailed exploit execution plans.
-          Consider gas costs, slippage, MEV protection, and profit optimization.
+          You are Grok-4-0709, analyzing smart contracts for gas optimization opportunities.
+          Identify storage optimizations, function selector optimizations, and other gas-saving patterns.
+          Provide specific, actionable recommendations.
+          
+      innovation_scoring:
+        temperature: 0.4
+        max_tokens: 2048
+        system_prompt: |
+          You are Grok-4-0709, evaluating smart contract innovation and design quality.
+          Score contracts based on novel approaches, creative solutions, and best practices.
           
     # Rate limiting
     rate_limits:
