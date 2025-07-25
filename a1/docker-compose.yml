@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector for storage
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: a1_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-a1_secure_pass}
+      POSTGRES_DB: a1_exploits
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U a1_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and coordination
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Anvil - Ethereum mainnet fork for testing
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    command: >
+      anvil 
+      --fork-url ${ETH_RPC_URL}
+      --fork-block-number ${FORK_BLOCK:-latest}
+      --host 0.0.0.0
+      --accounts 10
+      --balance 10000
+      --block-time 1
+      --gas-limit 30000000
+      --code-size-limit 100000
+    ports:
+      - "8545:8545"
+    environment:
+      - ETH_RPC_URL=${ETH_RPC_URL}
+
+  # Main A1 scanner with Grok-4-0709
+  scanner:
+    build: .
+    environment:
+      - GROK_API_KEY=${GROK_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - ETH_RPC_URL=${ETH_RPC_URL:-http://anvil:8545}
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=a1_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-a1_secure_pass}
+      - POSTGRES_DB=a1_exploits
+      - REDIS_URL=redis://redis:6379
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      anvil:
+        condition: service_started
+    volumes:
+      - ./results:/app/results
+      - ./logs:/app/logs
+    command: ["python", "run_scan.py", "--help"]
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

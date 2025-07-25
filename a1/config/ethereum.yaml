@@ -1,0 +1,121 @@
+# Ethereum Network Configuration
+networks:
+  mainnet:
+    chain_id: 1
+    rpc_endpoints:
+      primary: "${ETH_RPC_URL}"
+      fallback:
+        - "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+        - "https://mainnet.infura.io/v3/${INFURA_API_KEY}"
+        - "https://ethereum.publicnode.com"
+    
+    # Archive node required for historical state access
+    archive_node: true
+    
+    # Block confirmations
+    confirmations: 2
+    
+    # Gas configuration
+    gas:
+      price_multiplier: 1.1
+      max_price_gwei: 300
+      default_limit: 3000000
+      priority_fee_gwei: 2
+      
+    # MEV protection
+    mev:
+      use_flashbots: true
+      flashbots_relay: "https://relay.flashbots.net"
+      bundle_timeout: 120
+      
+  # Local fork for testing
+  fork:
+    chain_id: 1
+    rpc_endpoints:
+      primary: "http://localhost:8545"
+    
+    # Fork configuration
+    fork_config:
+      source_rpc: "${ETH_RPC_URL}"
+      block_number: "latest"
+      cache_enabled: true
+      
+# Contract addresses
+contracts:
+  multicall:
+    v2: "0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696"
+    v3: "0xcA11bde05977b3631167028862bE2a173976CA11"
+    
+  flashloan_providers:
+    aave_v3_pool: "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2"
+    balancer_vault: "0xBA12222222228d8Ba445958a75a0704d566BF2C8"
+    dydx_solo: "0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e"
+    
+  dex_routers:
+    uniswap_v2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+    uniswap_v3: "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+    sushiswap: "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+    
+  oracles:
+    chainlink_registry: "0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf"
+    
+# Transaction settings
+transactions:
+  # Nonce management
+  nonce:
+    track_pending: true
+    replacement_price_bump: 1.1
+    
+  # Receipt waiting
+  receipt:
+    timeout: 120
+    poll_interval: 1
+    
+  # Error handling
+  errors:
+    retry_on_nonce_error: true
+    retry_on_gas_error: true
+    max_retries: 3
+    
+# Simulation settings
+simulation:
+  # Anvil configuration
+  anvil:
+    port: 8545
+    host: "127.0.0.1"
+    fork_block_number: null  # Use latest if not specified
+    block_time: 12
+    gas_limit: 30000000
+    base_fee: 0
+    
+  # Impersonation
+  impersonation:
+    default_balance_eth: 10000
+    
+  # State overrides
+  state_overrides:
+    enabled: true
+    
+# Monitoring and logging
+monitoring:
+  # Transaction monitoring
+  track_gas_usage: true
+  track_execution_time: true
+  
+  # Alerts
+  alerts:
+    high_gas_price_gwei: 200
+    low_success_rate: 0.8
+    
+# Security settings
+security:
+  # Private key management
+  private_key_source: "env"  # env, file, or vault
+  private_key_env_var: "PRIVATE_KEY"
+  
+  # Transaction limits
+  max_gas_price_gwei: 500
+  max_transaction_value_eth: 100
+  
+  # Slippage protection
+  max_slippage_percent: 5
