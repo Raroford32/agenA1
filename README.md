@@ -1,231 +1,155 @@
-### Complete deployment blueprint — Autonomous exploit‑generation stack for Ethereum
+### Novel Smart Contract Analysis Framework — Pattern Discovery & Optimization
 
 ---
 
-#### 1. Network & data back‑ends
+#### 1. Overview
+
+This framework implements a novel approach to smart contract analysis using Grok-4-0709, focusing on:
+- **Architectural Pattern Discovery**: Identifying innovative design patterns and approaches
+- **Gas Optimization Analysis**: Deep analysis of optimization opportunities
+- **Code Quality Metrics**: Comprehensive quality and maintainability scoring
+- **Innovation Scoring**: Evaluating novel approaches and creative solutions
+
+---
+
+#### 2. Network & Data Backends
 
 | Service          | Endpoint / DSN                                                                               | Purpose                                       |
 | ---------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **PostgreSQL**   | `postgresql://postgres:WbjzKmjAriWScWDGPwGYcEHhyGlwqUKM@maglev.proxy.rlwy.net:40832/railway` | large‑object store, metadata, pgvector memory |
-| **Redis**        | `redis://default:shJfjXKndAqnPVGTqQkazUfAhEhajWhq@trolley.proxy.rlwy.net:41510`              | short‑lived cache, agent semaphores           |
-| **Ethereum RPC** | any archive URL (e.g. Infura, Erigon)                                                        | mainnet state fork                            |
+| **PostgreSQL**   | `postgresql://postgres:WbjzKmjAriWScWDGPwGYcEHhyGlwqUKM@maglev.proxy.rlwy.net:40832/railway` | Pattern storage, analysis results, pgvector   |
+| **Redis**        | `redis://default:shJfjXKndAqnPVGTqQkazUfAhEhajWhq@trolley.proxy.rlwy.net:41510`              | Analysis cache, rate limiting                 |
+| **Ethereum RPC** | Any archive URL (e.g. Infura, Alchemy)                                                        | Contract state and source retrieval           |
 
 ---
 
-#### 2. Repository layout
+#### 3. Repository Layout
 
 ```
 a1/
-├─ agents.yaml          # PraisonAI multi‑agent graph
-├─ models.yaml          # Grok LLM binding
-├─ tools/               # Python tool plugins
-│   ├─ source_code.py
-│   ├─ proxy_resolver.py
-│   ├─ slither_runner.py
-│   ├─ constructor_param.py
-│   ├─ state_reader.py
-│   ├─ execution_harness.py
-│   ├─ dex_liquidity.py
-│   ├─ revenue_normalizer.py
-│   └─ save_result.py
-├─ schema.sql           # Postgres schema & pgvector
-├─ docker-compose.yml
-└─ run_scan.py          # CLI entry‑point
+├─ config/
+│   └─ models.yaml          # Grok-4-0709 configuration
+├─ lib/
+│   ├─ grok_llm.py         # Grok LLM client
+│   ├─ ethereum_client.py   # Ethereum interaction
+│   └─ pattern_analyzer.py  # Novel pattern analysis engine
+├─ tools/
+│   └─ source_code.py      # Source code retrieval
+├─ schema.sql              # Database schema
+├─ docker-compose.yml      # Service orchestration
+└─ run_scan.py            # Main entry point
 ```
 
 ---
 
-#### 3. `models.yaml`
-
-```yaml
-models:
-  grok-4-0709:
-    provider: openrouter
-    model: "xai/grok-4-0709"
-    base_url: https://api.grok.com/openai/v1
-    api_key: ${GROK_API_KEY}
-```
-
-The PraisonAI runtime will pass **only** `model`, `messages`, and your key in each request.
-
----
-
-#### 4. `agents.yaml`
-
-```yaml
-framework: praisonai
-workflow: orchestrator_worker
-global_llm: grok-4-0709
-
-storage:
-  postgres:
-    dsn: ${POSTGRES_URL}
-  redis:
-    dsn: ${REDIS_URL}
-
-memory:
-  provider: pgvector
-  dsn: ${POSTGRES_URL}
-  namespace: a1-memory
-  embedding_model: grok-4-0709         # embeddings via Grok
-
-agents:
-
-  manager:
-    role: "Lead‑Analyst"
-    self_reflect: true
-    tasks: [plan, schedule, budget]
-
-  static_analyst:
-    tools: [SourceCodeTool, ProxyResolverTool,
-            SlitherTool, MythrilTool, ConstructorParamTool]
-
-  exploit_planner:
-    self_reflect: true
-
-  simulation_runner:
-    tools: [ExecutionHarnessTool]
-
-  refiner:
-    self_reflect: true
-
-  revenue_auditor:
-    tools: [RevenueNormalizerTool]
-
-  persistence:
-    tools: [SaveResultTool]
-```
-
----
-
-#### 5. PostgreSQL schema (`schema.sql`)
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE SCHEMA IF NOT EXISTS a1;
-
-CREATE TABLE a1.results (
-  run_id      UUID PRIMARY KEY,
-  created_at  TIMESTAMP DEFAULT now(),
-  address     BYTEA,
-  block_num   BIGINT,
-  meta        JSONB
-);
-
-CREATE TABLE a1.artifacts (
-  run_id      UUID REFERENCES a1.results(run_id),
-  filename    TEXT,
-  lo_oid      OID
-);
-
-CREATE TABLE a1.memory (
-  id          UUID PRIMARY KEY,
-  embedding   VECTOR(768),
-  metadata    JSONB
-);
-```
-
----
-
-#### 6. Tool interface highlights
-
-| Tool                      | Core method                      | Behaviour                                                         |
-| ------------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| **SourceCodeTool**        | `fetch(address, block)`          | multi‑source retrieval (Etherscan, Sourcify, fallback BlockScout) |
-| **ProxyResolverTool**     | `resolve(address, block)`        | handles EIP‑1967, Beacon, Diamond facets                          |
-| **SlitherTool**           | `run(source_bundle)`             | JSON findings embedded via pgvector                               |
-| **ConstructorParamTool**  | `decode(tx_hash)`                | extracts salts, init‑code                                         |
-| **StateReaderTool**       | `batch(address, abi, block)`     | historical multicall                                              |
-| **ExecutionHarnessTool**  | `test(poc_sol, block)`           | Foundry/Anvil fork, returns traces & profit                       |
-| **DEXLiquidityTool**      | `best_path(token_in, token_out)` | searches Uniswap V2/V3, Curve, Balancer                           |
-| **RevenueNormalizerTool** | `settle(fork_url, tokens[])`     | converts to ETH using best‑path swaps                             |
-| **SaveResultTool**        | `persist(meta, files[])`         | stores artefacts in Postgres large objects                        |
-
-Each tool exposes an OpenAPI‑compatible schema so PraisonAI can invoke them directly.
-
----
-
-#### 7. Execution flow (per contract)
-
-1. **Static‑Analyst** gathers code, proxies, constructor args, state snapshot.
-2. **Exploit‑Planner** reasons with self‑reflection, drafts `Exploit.sol`.
-3. **Simulation‑Runner** compiles & runs against `anvil --fork-block B`.
-4. **Refiner** critiques failures; loop ≤ 5 iterations.
-5. **Revenue‑Auditor** nets multi‑token balances → ETH.
-6. **Persistence** writes metadata + artefacts into Postgres LOs.
-
----
-
-#### 8. `docker-compose.yml`
-
-```yaml
-version: "3.9"
-
-services:
-  praisonai:
-    build: .
-    environment:
-      GROK_API_KEY: ${GROK_API_KEY}
-      POSTGRES_URL: ${POSTGRES_URL}
-      REDIS_URL: ${REDIS_URL}
-      ETH_RPC_URL: ${ETH_RPC_URL}
-    depends_on: [redis]
-
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--save", ""]
-
-  foundry:
-    image: ghcr.io/foundry-rs/foundry:latest
-    entrypoint: ["true"]      # sidecar used by ExecutionHarness
-```
-
----
-
-#### 9. Installation
+#### 4. Installation & Setup
 
 ```bash
-sudo apt update && sudo apt install -y git docker.io
-git clone https://github.com/yourorg/a1 && cd a1
-python3 -m venv venv && source venv/bin/activate
-pip install praisonai web3 slither-analyzer mythril psycopg2-binary pgvector
-psql "$POSTGRES_URL" -f schema.sql
-docker compose up -d
+# Clone repository
+git clone <repo-url>
+cd a1
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export GROK_API_KEY="your-grok-api-key"
+export OPENROUTER_API_KEY="your-openrouter-key"
+export ETHERSCAN_API_KEY="your-etherscan-key"
+export ETH_RPC_URL="your-ethereum-rpc-url"
+
+# Run analysis
+python run_scan.py <contract-address>
 ```
 
 ---
 
-#### 10. Scanning contracts
+#### 5. Novel Analysis Features
+
+##### Pattern Discovery
+- Identifies modern architectural patterns beyond basic factory/proxy
+- Discovers novel state management approaches
+- Analyzes innovative access control mechanisms
+- Evaluates unique economic models and tokenomics
+
+##### Gas Optimization
+- Storage layout optimization opportunities
+- Function selector optimization
+- Calldata optimization techniques
+- Assembly optimization candidates
+- State variable packing analysis
+
+##### Quality Metrics
+- Code complexity scoring
+- Maintainability assessment
+- Security posture evaluation (best practices)
+- Innovation scoring
+
+---
+
+#### 6. Usage Examples
 
 ```bash
-export GROK_API_KEY=...
-export POSTGRES_URL="postgresql://postgres:WbjzKmjAriWScWDGPwGYcEHhyGlwqUKM@maglev.proxy.rlwy.net:40832/railway"
-export REDIS_URL="redis://default:shJfjXKndAqnPVGTqQkazUfAhEhajWhq@trolley.proxy.rlwy.net:41510"
-export ETH_RPC_URL="https://mainnet.infura.io/v3/<key>"
+# Analyze single contract
+python run_scan.py 0x1234...abcd
 
-python run_scan.py 0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413
+# Analyze multiple contracts
+python run_scan.py 0x1234...abcd 0x5678...efgh
+
+# Save results to file
+python run_scan.py 0x1234...abcd --output results.json
+
+# Parallel analysis
+python run_scan.py contract1 contract2 contract3 --parallel 3
 ```
 
-Results appear under `results/<address>/` and in Postgres `a1.results`.
+---
+
+#### 7. Output Format
+
+```json
+{
+  "contract_address": "0x...",
+  "analysis_timestamp": "2024-01-01T00:00:00",
+  "grok_model": "grok-4-0709",
+  "architectural_patterns": [...],
+  "optimization_opportunities": [...],
+  "gas_efficiency_score": 85,
+  "code_quality_metrics": {
+    "readability": 8,
+    "documentation": 7,
+    "modularity": 9,
+    "standards_compliance": true
+  }
+}
+```
 
 ---
 
-#### 11. Observability (Prometheus‑style metrics)
+#### 8. Configuration
 
-* `exec_seconds` — scan runtime
-* `profit_eth`   — realised profit
-* `tokens_total` — Grok usage
+The `config/models.yaml` file contains Grok-4-0709 configurations for different analysis tasks:
 
-Grafana panels can query Postgres (`pg_stat_statements`) and Redis key counts.
-
----
-
-#### 12. Security toggle
-
-Set `DEFENDER_MODE=1` to PGP‑encrypt PoCs before storage; otherwise raw Solidity is retained.
+- **pattern_analysis**: Architectural pattern discovery
+- **gas_optimization**: Gas efficiency analysis
+- **innovation_scoring**: Innovation and creativity evaluation
 
 ---
 
-#### 13. Performance target
+#### 9. Architecture
 
-Five‑turn budget reproduces the **26 / 26 exploit success** reported in the A1 paper, matching 62.96 % VERITE coverage and \$9.33 M total value extracted.&#x20;
+The system uses a modular architecture:
+
+1. **Source Retrieval**: Fetches verified source code from Etherscan/Sourcify
+2. **Pattern Analysis**: Uses Grok-4-0709 to identify novel patterns
+3. **Metrics Generation**: Calculates comprehensive quality metrics
+4. **Result Aggregation**: Combines insights into actionable recommendations
+
+---
+
+#### 10. Future Enhancements
+
+- [ ] Integration with additional source verification services
+- [ ] Real-time monitoring of deployed contracts
+- [ ] Pattern database for trend analysis
+- [ ] Automated optimization suggestion implementation
+- [ ] Cross-chain pattern analysis support

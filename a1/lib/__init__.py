@@ -1,7 +1,7 @@
 # Core library modules
 from .grok_llm import GrokLLM, GrokConfig, create_grok_client
 from .ethereum_client import EthereumClient, EthereumConfig, ForkSimulator, create_ethereum_client
-from .exploit_agent import ExploitAgent, ExploitStatus, VulnerabilityReport, ExploitPlan, create_exploit_agent
+from .pattern_analyzer import NovelPatternAnalyzer, PatternInsight, ContractMetrics, create_pattern_analyzer
 
 __all__ = [
     "GrokLLM",
@@ -11,9 +11,8 @@ __all__ = [
     "EthereumConfig",
     "ForkSimulator",
     "create_ethereum_client",
-    "ExploitAgent",
-    "ExploitStatus",
-    "VulnerabilityReport",
-    "ExploitPlan",
-    "create_exploit_agent"
+    "NovelPatternAnalyzer",
+    "PatternInsight",
+    "ContractMetrics",
+    "create_pattern_analyzer"
 ]

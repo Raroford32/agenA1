@@ -45,7 +45,7 @@ class GrokLLM:
             "Authorization": f"Bearer {config.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://github.com/Raroford32/agenA1",
-            "X-Title": "A1 Ethereum Exploit Generator"
+            "X-Title": "A1 Smart Contract Pattern Analyzer"
         }
         
     async def __aenter__(self):
